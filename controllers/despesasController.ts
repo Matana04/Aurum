@@ -1,13 +1,14 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
+import type { AuthRequest } from '../middlewares/authMiddleware.js';
 import * as DespesasModel from '../models/despesasModel.js';
 import * as UsuarioModel from '../models/usuariosModel.js';
 
-export const cadastrarDespesa = async (req: Request, res: Response) => {
+export const cadastrarDespesa = async (req: AuthRequest, res: Response) => {
   try {
-    const { titulo, valor, data, usuarioId } = req.body;
+    const { titulo, valor, data } = req.body;
 
-    if (!titulo || valor === undefined || !data || !usuarioId) {
-      return res.status(400).json({ erro: 'Por favor, preencha todos os campos (titulo, valor, data, usuarioId)!' });
+    if (!titulo || valor === undefined || !data) {
+      return res.status(400).json({ erro: 'Por favor, preencha todos os campos (titulo, valor, data)!' });
     }
 
     if (typeof valor !== 'number' && typeof valor !== 'string') {
@@ -24,9 +25,14 @@ export const cadastrarDespesa = async (req: Request, res: Response) => {
       return res.status(400).json({ erro: 'Data inválida. Use formato ISO ou data válida.' });
     }
 
+    const usuarioId = req.user?.id;
+    if (!usuarioId) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
     const usuario = await UsuarioModel.findUsuarioById(usuarioId);
     if (!usuario) {
-      return res.status(404).json({ erro: 'Usuário associado não encontrado.' });
+      return res.status(404).json({ erro: 'Usuário não encontrado.' });
     }
 
     const novaDespesa = await DespesasModel.createDespesa({
@@ -43,26 +49,42 @@ export const cadastrarDespesa = async (req: Request, res: Response) => {
   }
 };
 
-export const listarDespesas = async (req: Request, res: Response) => {
+export const listarDespesas = async (req: AuthRequest, res: Response) => {
   try {
+    const usuarioId = req.user?.id;
+    if (!usuarioId) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
     const despesas = await DespesasModel.findAllDespesas();
-    return res.status(200).json({ total: despesas.length, despesas });
+    const despesasDoUsuario = despesas.filter(despesa => despesa.usuarioId === usuarioId);
+    
+    return res.status(200).json({ total: despesasDoUsuario.length, despesas: despesasDoUsuario });
   } catch (error) {
     console.error('ERRO AO LISTAR DESPESAS:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
   }
 };
 
-export const obterDespesaPorId = async (req: Request, res: Response) => {
+export const obterDespesaPorId = async (req: AuthRequest, res: Response) => {
   try {
     const id = String(req.params.id || '');
     if (!id) {
       return res.status(400).json({ erro: 'ID da despesa é obrigatório!' });
     }
 
+    const usuarioId = req.user?.id;
+    if (!usuarioId) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
     const despesa = await DespesasModel.findDespesaById(id);
     if (!despesa) {
       return res.status(404).json({ erro: 'Despesa não encontrada!' });
+    }
+
+    if (despesa.usuarioId !== usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para acessar esta despesa.' });
     }
 
     return res.status(200).json(despesa);
@@ -72,18 +94,27 @@ export const obterDespesaPorId = async (req: Request, res: Response) => {
   }
 };
 
-export const atualizarDespesa = async (req: Request, res: Response) => {
+export const atualizarDespesa = async (req: AuthRequest, res: Response) => {
   try {
     const id = String(req.params.id || '');
-    const { titulo, valor, data, usuarioId } = req.body;
+    const { titulo, valor, data } = req.body;
 
     if (!id) {
       return res.status(400).json({ erro: 'ID da despesa é obrigatório!' });
     }
 
+    const usuarioId = req.user?.id;
+    if (!usuarioId) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
     const despesaExistente = await DespesasModel.findDespesaById(id);
     if (!despesaExistente) {
       return res.status(404).json({ erro: 'Despesa não encontrada!' });
+    }
+
+    if (despesaExistente.usuarioId !== usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para atualizar esta despesa.' });
     }
 
     const updateData: any = {};
@@ -106,14 +137,6 @@ export const atualizarDespesa = async (req: Request, res: Response) => {
       updateData.data = dataDate;
     }
 
-    if (usuarioId) {
-      const usuario = await UsuarioModel.findUsuarioById(usuarioId);
-      if (!usuario) {
-        return res.status(404).json({ erro: 'Usuário associado não encontrado.' });
-      }
-      updateData.usuarioId = usuarioId;
-    }
-
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ erro: 'Nenhum campo válido para atualizar.' });
     }
@@ -126,16 +149,25 @@ export const atualizarDespesa = async (req: Request, res: Response) => {
   }
 };
 
-export const deletarDespesa = async (req: Request, res: Response) => {
+export const deletarDespesa = async (req: AuthRequest, res: Response) => {
   try {
     const id = String(req.params.id || '');
     if (!id) {
       return res.status(400).json({ erro: 'ID da despesa é obrigatório!' });
     }
 
+    const usuarioId = req.user?.id;
+    if (!usuarioId) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
     const despesaExistente = await DespesasModel.findDespesaById(id);
     if (!despesaExistente) {
       return res.status(404).json({ erro: 'Despesa não encontrada!' });
+    }
+
+    if (despesaExistente.usuarioId !== usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para deletar esta despesa.' });
     }
 
     await DespesasModel.deleteDespesa(id);

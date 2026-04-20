@@ -4,8 +4,6 @@ node_modules
 
 /generated/prisma
 
-CRUD_USUARIOS.md
-
 prisma.config.ts
 
 .env_old

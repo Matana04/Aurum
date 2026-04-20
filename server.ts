@@ -19,6 +19,14 @@ const swaggerOptions = {
     },
     servers: [{ url: `http://localhost:${port}` }],
     components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Bearer token obtido após login',
+        },
+      },
       schemas: {
         UsuarioInput: {
           type: 'object',

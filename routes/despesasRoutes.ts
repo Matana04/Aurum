@@ -10,13 +10,27 @@ const router = express.Router();
  *   post:
  *     tags:
  *       - Despesas
- *     summary: Cadastrar despesa
+ *     summary: Cadastrar despesa para o usuário autenticado
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/DespesaInput'
+ *             type: object
+ *             required: ['titulo', 'valor', 'data']
+ *             properties:
+ *               titulo:
+ *                 type: string
+ *                 example: 'Compra no mercado'
+ *               valor:
+ *                 type: number
+ *                 example: 156.50
+ *               data:
+ *                 type: string
+ *                 format: date
+ *                 example: '2026-04-20'
  *     responses:
  *       201:
  *         description: Despesa criada com sucesso
@@ -35,8 +49,8 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- *       404:
- *         description: Usuário não encontrado
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
  *         content:
  *           application/json:
  *             schema:
@@ -56,10 +70,12 @@ router.post('/despesas', authenticateToken, DespesasController.cadastrarDespesa)
  *   get:
  *     tags:
  *       - Despesas
- *     summary: Listar todas as despesas
+ *     summary: Listar despesas do usuário autenticado
+ *     security:
+ *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: Lista de despesas
+ *         description: Lista de despesas do usuário
  *         content:
  *           application/json:
  *             schema:
@@ -71,6 +87,12 @@ router.post('/despesas', authenticateToken, DespesasController.cadastrarDespesa)
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Despesa'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Erro interno no servidor
  *         content:
@@ -86,7 +108,9 @@ router.get('/despesas', authenticateToken, DespesasController.listarDespesas);
  *   get:
  *     tags:
  *       - Despesas
- *     summary: Obter despesa por ID
+ *     summary: Obter despesa por ID (apenas do usuário autenticado)
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -102,6 +126,18 @@ router.get('/despesas', authenticateToken, DespesasController.listarDespesas);
  *               $ref: '#/components/schemas/Despesa'
  *       400:
  *         description: ID inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Sem permissão para acessar esta despesa
  *         content:
  *           application/json:
  *             schema:
@@ -127,7 +163,9 @@ router.get('/despesas/:id', authenticateToken, DespesasController.obterDespesaPo
  *   put:
  *     tags:
  *       - Despesas
- *     summary: Atualizar despesa por ID
+ *     summary: Atualizar despesa por ID (apenas do proprietário)
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -148,8 +186,6 @@ router.get('/despesas/:id', authenticateToken, DespesasController.obterDespesaPo
  *               data:
  *                 type: string
  *                 format: date
- *               usuarioId:
- *                 type: string
  *     responses:
  *       200:
  *         description: Despesa atualizada com sucesso
@@ -168,8 +204,20 @@ router.get('/despesas/:id', authenticateToken, DespesasController.obterDespesaPo
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Sem permissão para atualizar esta despesa
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: Despesa não encontrada / Autor não encontrado
+ *         description: Despesa não encontrada
  *         content:
  *           application/json:
  *             schema:
@@ -189,7 +237,9 @@ router.put('/despesas/:id', authenticateToken, DespesasController.atualizarDespe
  *   delete:
  *     tags:
  *       - Despesas
- *     summary: Deletar despesa por ID
+ *     summary: Deletar despesa por ID (apenas do proprietário)
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -205,6 +255,18 @@ router.put('/despesas/:id', authenticateToken, DespesasController.atualizarDespe
  *               $ref: '#/components/schemas/MessageResponse'
  *       400:
  *         description: Requisição inválida
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Sem permissão para deletar esta despesa
  *         content:
  *           application/json:
  *             schema:
