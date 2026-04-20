@@ -1,6 +1,6 @@
 import prisma from '../db/prismaClient.js';
 
-export const createDespesa = (data: { titulo: string; valor: number; data: Date; usuarioId: string }) => {
+export const createDespesa = (data: { titulo: string; categoria?: string; valor: number; data: Date; usuarioId: string }) => {
   return prisma.despesas.create({ data });
 };
 
@@ -25,10 +25,127 @@ export const findDespesaById = (id: string) => {
   });
 };
 
-export const updateDespesa = (id: string, data: Partial<{ titulo: string; valor: number; data: Date; usuarioId: string }>) => {
+export const updateDespesa = (id: string, data: Partial<{ titulo: string; categoria: string; valor: number; data: Date; usuarioId: string }>) => {
   return prisma.despesas.update({ where: { id }, data });
 };
 
 export const deleteDespesa = (id: string) => {
   return prisma.despesas.delete({ where: { id } });
+};
+
+export const findDespesasByUsuarioAndMes = (usuarioId: string, ano: number, mes: number) => {
+  const startOfMonth = new Date(ano, mes, 1);
+  const endOfMonth = new Date(ano, mes + 1, 0, 23, 59, 59, 999);
+
+  return prisma.despesas.findMany({
+    where: {
+      usuarioId,
+      data: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    include: {
+      usuario: {
+        select: { id: true, nome: true, email: true },
+      },
+    },
+    orderBy: {
+      data: 'asc',
+    },
+  });
+};
+
+export const findLast5DespesasDoMes = (usuarioId: string, ano: number, mes: number) => {
+  const startOfMonth = new Date(ano, mes, 1);
+  const endOfMonth = new Date(ano, mes + 1, 0, 23, 59, 59, 999);
+
+  return prisma.despesas.findMany({
+    where: {
+      usuarioId,
+      data: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    include: {
+      usuario: {
+        select: { id: true, nome: true, email: true },
+      },
+    },
+    orderBy: {
+      data: 'desc',
+    },
+    take: 5,
+  });
+};
+
+export const findDespesasDodia = (usuarioId: string, ano: number, mes: number, dia: number) => {
+  // Criar as datas em UTC para consistência com como as despesas são salvas
+  const startOfDay = new Date(Date.UTC(ano, mes, dia, 0, 0, 0, 0));
+  const endOfDay = new Date(Date.UTC(ano, mes, dia, 23, 59, 59, 999));
+
+  return prisma.despesas.findMany({
+    where: {
+      usuarioId,
+      data: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+    include: {
+      usuario: {
+        select: { id: true, nome: true, email: true },
+      },
+    },
+    orderBy: {
+      data: 'desc',
+    },
+  });
+};
+
+export const findDespesasDoAno = (usuarioId: string, ano: number) => {
+  const startOfYear = new Date(Date.UTC(ano, 0, 1, 0, 0, 0, 0));
+  const endOfYear = new Date(Date.UTC(ano, 11, 31, 23, 59, 59, 999));
+
+  return prisma.despesas.findMany({
+    where: {
+      usuarioId,
+      data: {
+        gte: startOfYear,
+        lte: endOfYear,
+      },
+    },
+    include: {
+      usuario: {
+        select: { id: true, nome: true, email: true },
+      },
+    },
+    orderBy: {
+      data: 'desc',
+    },
+  });
+};
+
+export const findDespesasDoMesAtual = (usuarioId: string, ano: number, mes: number) => {
+  const startOfMonth = new Date(Date.UTC(ano, mes, 1, 0, 0, 0, 0));
+  const endOfMonth = new Date(Date.UTC(ano, mes + 1, 0, 23, 59, 59, 999));
+
+  return prisma.despesas.findMany({
+    where: {
+      usuarioId,
+      data: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    include: {
+      usuario: {
+        select: { id: true, nome: true, email: true },
+      },
+    },
+    orderBy: {
+      data: 'desc',
+    },
+  });
 };

@@ -9,6 +9,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 
@@ -30,6 +31,7 @@ model Usuarios {
 model Despesas {
   id        String   @id @default(uuid())
   titulo    String
+  categoria String?
   valor     Decimal  @db.Decimal(10, 2)
   data      DateTime 
   

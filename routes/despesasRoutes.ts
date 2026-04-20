@@ -104,6 +104,246 @@ router.get('/despesas', authenticateToken, DespesasController.listarDespesas);
 
 /**
  * @openapi
+ * /despesas/mes:
+ *   get:
+ *     tags:
+ *       - Despesas
+ *     summary: Listar despesas do mês e calcular total gasto
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: data
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         example: '2026-04-15'
+ *         description: Data no formato YYYY-MM-DD para filtrar o mês
+ *     responses:
+ *       200:
+ *         description: Relatório mensal de despesas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mes:
+ *                   type: string
+ *                   example: '2026-04'
+ *                 totalGasto:
+ *                   type: number
+ *                   example: 1250.75
+ *                 quantidadeDespesas:
+ *                   type: integer
+ *                   example: 8
+ *                 despesas:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Despesa'
+ *       400:
+ *         description: Parâmetro data obrigatório ou inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erro interno no servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/despesas/mes', authenticateToken, DespesasController.listarDespesasPorMes);
+
+/**
+ * @openapi
+ * /despesas/ultimas-5/mes-atual:
+ *   get:
+ *     tags:
+ *       - Despesas
+ *     summary: Listar as últimas 5 despesas do mês atual
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Últimas 5 despesas do mês atual
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mes:
+ *                   type: string
+ *                   example: '2026-04'
+ *                 totalGasto:
+ *                   type: number
+ *                   example: 500.00
+ *                 quantidadeDespesas:
+ *                   type: integer
+ *                   example: 5
+ *                 despesas:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Despesa'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erro interno no servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/despesas/ultimas-5/mes-atual', authenticateToken, DespesasController.listarUltimas5DespesasDoMesAtual);
+
+/**
+ * @openapi
+ * /despesas/do-dia:
+ *   get:
+ *     tags:
+ *       - Despesas
+ *     summary: Listar todas as despesas do dia atual
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Todas as despesas do dia
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: string
+ *                   example: '2026-04-20'
+ *                 totalGasto:
+ *                   type: number
+ *                   example: 250.50
+ *                 quantidadeDespesas:
+ *                   type: integer
+ *                   example: 3
+ *                 despesas:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Despesa'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erro interno no servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/despesas/do-dia', authenticateToken, DespesasController.listarDespesasDodia);
+
+/**
+ * @openapi
+ * /despesas/do-ano:
+ *   get:
+ *     tags:
+ *       - Despesas
+ *     summary: Listar todas as despesas do ano atual
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Todas as despesas do ano
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ano:
+ *                   type: integer
+ *                   example: 2026
+ *                 totalGasto:
+ *                   type: number
+ *                   example: 5250.75
+ *                 quantidadeDespesas:
+ *                   type: integer
+ *                   example: 45
+ *                 despesas:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Despesa'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erro interno no servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/despesas/do-ano', authenticateToken, DespesasController.listarDespesasDoAno);
+
+/**
+ * @openapi
+ * /despesas/do-mes-atual:
+ *   get:
+ *     tags:
+ *       - Despesas
+ *     summary: Listar todas as despesas do mês atual
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Todas as despesas do mês atual
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mes:
+ *                   type: string
+ *                   example: '2026-04'
+ *                 totalGasto:
+ *                   type: number
+ *                   example: 1250.75
+ *                 quantidadeDespesas:
+ *                   type: integer
+ *                   example: 12
+ *                 despesas:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Despesa'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erro interno no servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/despesas/do-mes-atual', authenticateToken, DespesasController.listarDespesasDoMesAtual);
+
+/**
+ * @openapi
  * /despesas/{id}:
  *   get:
  *     tags:
