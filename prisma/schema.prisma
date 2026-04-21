@@ -9,7 +9,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 
@@ -45,17 +44,18 @@ model Despesas {
 }
 
 model Metas {
-  id         String   @id @default(uuid())
-  titulo     String
-  valor      Decimal  @db.Decimal(10, 2)
-  dataInicio DateTime
-  dataFinal  DateTime
+  id               String   @id @default(uuid())
+  titulo           String
+  valor            Decimal  @db.Decimal(10, 2)
+  valorAcumulado   Decimal  @db.Decimal(10, 2) @default(0)
+  dataInicio       DateTime
+  dataFinal        DateTime
   
-  usuarioId  String
-  usuario    Usuarios @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId        String
+  usuario          Usuarios @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("metas")
 }

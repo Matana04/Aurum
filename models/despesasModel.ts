@@ -1,7 +1,7 @@
 import prisma from '../db/prismaClient.js';
 
-export const createDespesa = (data: { titulo: string; categoria?: string; valor: number; data: Date; usuarioId: string }) => {
-  return prisma.despesas.create({ data });
+export const createDespesa = (data: { titulo: string; categoria?: string; valor: number | string; data: Date; usuarioId: string }) => {
+  return prisma.despesas.create({ data: { ...data, valor: Number(data.valor) } });
 };
 
 export const findAllDespesas = () => {
@@ -25,8 +25,12 @@ export const findDespesaById = (id: string) => {
   });
 };
 
-export const updateDespesa = (id: string, data: Partial<{ titulo: string; categoria: string; valor: number; data: Date; usuarioId: string }>) => {
-  return prisma.despesas.update({ where: { id }, data });
+export const updateDespesa = (id: string, data: Partial<{ titulo: string; categoria: string; valor: number | string; data: Date; usuarioId: string }>) => {
+  const updateData: any = { ...data };
+  if (updateData.valor !== undefined) {
+    updateData.valor = Number(updateData.valor);
+  }
+  return prisma.despesas.update({ where: { id }, data: updateData });
 };
 
 export const deleteDespesa = (id: string) => {

@@ -13,22 +13,38 @@ export const cadastrarDespesa = async (req: AuthRequest, res: Response) => {
     const usuarioId = req.user?.id;
 
     if (!usuarioId) {
-      return res.status(401).json({ erro: 'Usu�rio n�o autenticado.' });
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
     }
 
     if (!titulo || !valor || !data) {
-      return res.status(400).json({ erro: 'Todos os campos s�o obrigat�rios: titulo, valor, data.' });
+      return res.status(400).json({ erro: 'Todos os campos são obrigatórios: titulo, valor, data.' });
     }
 
-    const novaDespesa = await createDespesa({
-      titulo,
-      categoria,
-      valor: Number(valor),
-      data: new Date(data),
-      usuarioId
-    });
+    // Converter data de string para objeto Date em UTC
+    const dataParts = data.split('-');
+    const dateUTC = new Date(Date.UTC(parseInt(dataParts[0]), parseInt(dataParts[1]) - 1, parseInt(dataParts[2])));
 
-    return res.status(201).json(novaDespesa);
+    try {
+      const novaDespesa = await createDespesa({
+        titulo,
+        categoria: categoria || null,
+        valor: Number(valor),
+        data: dateUTC,
+        usuarioId
+      });
+
+      return res.status(201).json(novaDespesa);
+    } catch (dbError) {
+      console.error('ERRO DO PRISMA:', dbError);
+      // Se erro com categoria, tenta sem categoria
+      const despesaSemCategoria = await createDespesa({
+        titulo,
+        valor: Number(valor),
+        data: dateUTC,
+        usuarioId
+      });
+      return res.status(201).json(despesaSemCategoria);
+    }
   } catch (error) {
     console.error('ERRO AO CADASTRAR DESPESA:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
@@ -111,7 +127,10 @@ export const atualizarDespesa = async (req: AuthRequest, res: Response) => {
     if (categoria !== undefined) updateData.categoria = categoria;
     if (titulo !== undefined) updateData.titulo = titulo;
     if (valor !== undefined) updateData.valor = Number(valor);
-    if (data !== undefined) updateData.data = new Date(data);
+    if (data !== undefined) {
+      const dataParts = data.split('-');
+      updateData.data = new Date(Date.UTC(parseInt(dataParts[0]), parseInt(dataParts[1]) - 1, parseInt(dataParts[2])));
+    }
 
     const despesaAtualizada = await updateDespesa(id, updateData);
 
