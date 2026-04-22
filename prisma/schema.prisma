@@ -28,17 +28,18 @@ model Usuarios {
 }
 
 model Despesas {
-  id        String   @id @default(uuid())
-  titulo    String
-  categoria String?
-  valor     Decimal  @db.Decimal(10, 2)
-  data      DateTime 
+  id                   String   @id @default(uuid())
+  titulo               String
+  categoria            String?
+  valor                Decimal  @db.Decimal(10, 2)
+  data                 DateTime 
+  tipoMovimentacao     String   @default("DESPESA")
   
-  usuarioId String
-  usuario   Usuarios @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId            String
+  usuario              Usuarios @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@map("despesas")
 }

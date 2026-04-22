@@ -56,11 +56,13 @@ export const listarDespesas = async (req: AuthRequest, res: Response) => {
     const usuarioId = req.user?.id;
 
     if (!usuarioId) {
-      return res.status(401).json({ erro: 'Usu�rio n�o autenticado.' });
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
     }
 
     const todasDespesas = await findAllDespesas();
-    const despesasDoUsuario = todasDespesas.filter((despesa: any) => despesa.usuarioId === usuarioId);
+    const despesasDoUsuario = todasDespesas.filter(
+      (despesa: any) => despesa.usuarioId === usuarioId && despesa.tipoMovimentacao === 'DESPESA'
+    );
 
     return res.status(200).json(despesasDoUsuario);
   } catch (error) {
@@ -178,37 +180,40 @@ export const listarDespesasPorMes = async (req: AuthRequest, res: Response) => {
     const { data } = req.query;
 
     if (!data || typeof data !== 'string') {
-      return res.status(400).json({ erro: 'Par�metro \"data\" � obrigat�rio no formato YYYY-MM-DD.' });
+      return res.status(400).json({ erro: 'Parâmetro "data" é obrigatório no formato YYYY-MM-DD.' });
     }
 
     const usuarioId = req.user?.id;
     if (!usuarioId) {
-      return res.status(401).json({ erro: 'Usu�rio n�o autenticado.' });
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
     }
 
     const dataReferencia = new Date(data);
     if (Number.isNaN(dataReferencia.getTime())) {
-      return res.status(400).json({ erro: 'Data inv�lida. Use formato YYYY-MM-DD.' });
+      return res.status(400).json({ erro: 'Data inválida. Use formato YYYY-MM-DD.' });
     }
 
-    // Extrair ano e m�s da data
+    // Extrair ano e mês da data
     const ano = dataReferencia.getFullYear();
     const mes = dataReferencia.getMonth(); // 0-11
 
     // Buscar despesas do usuário no mês específico
     const despesasDoMes = await findDespesasByUsuarioAndMes(usuarioId, ano, mes);
 
-    // Calcular total gasto no m�s
-    const totalGasto = despesasDoMes.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
+    // Filtrar apenas despesas reais (excluir economias)
+    const despesasReais = despesasDoMes.filter((d: any) => d.tipoMovimentacao === 'DESPESA');
+
+    // Calcular total gasto no mês
+    const totalGasto = despesasReais.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
 
     return res.status(200).json({
       mes: `${ano}-${String(mes + 1).padStart(2, '0')}`,
       totalGasto,
-      quantidadeDespesas: despesasDoMes.length,
-      despesas: despesasDoMes
+      quantidadeDespesas: despesasReais.length,
+      despesas: despesasReais
     });
   } catch (error) {
-    console.error('ERRO AO LISTAR DESPESAS POR M�S:', error);
+    console.error('ERRO AO LISTAR DESPESAS POR MÊS:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
   }
 };
@@ -228,14 +233,17 @@ export const listarUltimas5DespesasDoMesAtual = async (req: AuthRequest, res: Re
     // Buscar as últimas 5 despesas do mês atual
     const ultimas5Despesas = await findLast5DespesasDoMes(usuarioId, ano, mes);
 
+    // Filtrar apenas despesas reais (excluir economias)
+    const despesasReais = ultimas5Despesas.filter((d: any) => d.tipoMovimentacao === 'DESPESA');
+
     // Calcular total das últimas 5 despesas
-    const totalGasto = ultimas5Despesas.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
+    const totalGasto = despesasReais.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
 
     return res.status(200).json({
       mes: `${ano}-${String(mes + 1).padStart(2, '0')}`,
       totalGasto,
-      quantidadeDespesas: ultimas5Despesas.length,
-      despesas: ultimas5Despesas
+      quantidadeDespesas: despesasReais.length,
+      despesas: despesasReais
     });
   } catch (error) {
     console.error('ERRO AO LISTAR ÚLTIMAS 5 DESPESAS DO MÊS ATUAL:', error);
@@ -259,14 +267,17 @@ export const listarDespesasDodia = async (req: AuthRequest, res: Response) => {
     // Buscar todas as despesas do dia atual
     const despesasDodia = await findDespesasDodia(usuarioId, ano, mes, dia);
 
+    // Filtrar apenas despesas reais (excluir economias)
+    const despesasReais = despesasDodia.filter((d: any) => d.tipoMovimentacao === 'DESPESA');
+
     // Calcular total gasto no dia
-    const totalGasto = despesasDodia.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
+    const totalGasto = despesasReais.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
 
     return res.status(200).json({
       data: `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`,
       totalGasto,
-      quantidadeDespesas: despesasDodia.length,
-      despesas: despesasDodia
+      quantidadeDespesas: despesasReais.length,
+      despesas: despesasReais
     });
   } catch (error) {
     console.error('ERRO AO LISTAR DESPESAS DO DIA:', error);
@@ -288,14 +299,17 @@ export const listarDespesasDoAno = async (req: AuthRequest, res: Response) => {
     // Buscar todas as despesas do ano atual
     const despesasDoAno = await findDespesasDoAno(usuarioId, ano);
 
+    // Filtrar apenas despesas reais (excluir economias)
+    const despesasReais = despesasDoAno.filter((d: any) => d.tipoMovimentacao === 'DESPESA');
+
     // Calcular total gasto no ano
-    const totalGasto = despesasDoAno.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
+    const totalGasto = despesasReais.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
 
     return res.status(200).json({
       ano,
       totalGasto,
-      quantidadeDespesas: despesasDoAno.length,
-      despesas: despesasDoAno
+      quantidadeDespesas: despesasReais.length,
+      despesas: despesasReais
     });
   } catch (error) {
     console.error('ERRO AO LISTAR DESPESAS DO ANO:', error);
@@ -318,14 +332,17 @@ export const listarDespesasDoMesAtual = async (req: AuthRequest, res: Response) 
     // Buscar todas as despesas do mês atual
     const despesasDoMesAtual = await findDespesasDoMesAtual(usuarioId, ano, mes);
 
+    // Filtrar apenas despesas reais (excluir economias)
+    const despesasReais = despesasDoMesAtual.filter((d: any) => d.tipoMovimentacao === 'DESPESA');
+
     // Calcular total gasto no mês
-    const totalGasto = despesasDoMesAtual.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
+    const totalGasto = despesasReais.reduce((total: number, despesa: any) => total + Number(despesa.valor), 0);
 
     return res.status(200).json({
       mes: `${ano}-${String(mes + 1).padStart(2, '0')}`,
       totalGasto,
-      quantidadeDespesas: despesasDoMesAtual.length,
-      despesas: despesasDoMesAtual
+      quantidadeDespesas: despesasReais.length,
+      despesas: despesasReais
     });
   } catch (error) {
     console.error('ERRO AO LISTAR DESPESAS DO MÊS ATUAL:', error);

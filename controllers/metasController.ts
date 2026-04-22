@@ -9,6 +9,7 @@ import {
   adicionarAoValorAcumulado,
   findMetasAtivasByUsuario,
 } from '../models/metasModel.js';
+import { createDespesa } from '../models/despesasModel.js';
 
 interface AuthRequest extends Request {
   user?: {
@@ -338,6 +339,21 @@ export const adicionarValorAcumulado = async (req: AuthRequest, res: Response) =
 
     const metaAtualizada = await adicionarAoValorAcumulado(id, valor);
 
+    // Criar despesa registrando a economia/depósito
+    try {
+      await createDespesa({
+        titulo: `Depósito - ${meta.titulo}`,
+        categoria: `Meta-${id}`,
+        valor: Number(valor),
+        data: new Date(),
+        usuarioId: usuarioId,
+        tipoMovimentacao: 'ECONOMIA'
+      });
+    } catch (despesaError) {
+      console.error('Erro ao criar despesa de histórico:', despesaError);
+      // Não falha a requisição se não conseguir criar a despesa
+    }
+
     const valorMensal = calcularValorMensal(
       Number(metaAtualizada.valor),
       metaAtualizada.dataInicio,
@@ -363,6 +379,88 @@ export const adicionarValorAcumulado = async (req: AuthRequest, res: Response) =
     });
   } catch (error) {
     console.error('ERRO AO ADICIONAR VALOR ACUMULADO:', error);
+    return res.status(500).json({ erro: 'Erro interno no servidor.' });
+  }
+};
+
+// Endpoint: Obter histórico mensal da meta
+export const obterHistoricoMeta = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params as { id?: string };
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
+    if (!id) {
+      return res.status(400).json({ erro: 'ID da meta é obrigatório.' });
+    }
+
+    const meta = await findMetaById(id);
+
+    if (!meta) {
+      return res.status(404).json({ erro: 'Meta não encontrada.' });
+    }
+
+    if (meta.usuarioId !== usuarioId) {
+      return res.status(403).json({
+        erro: 'Você não tem permissão para acessar o histórico desta meta.',
+      });
+    }
+
+    // Buscar todas as despesas com tipo ECONOMIA e categoria Meta-{id}
+    const { findAllDespesas } = await import('../models/despesasModel.js');
+    const todasDespesas = await findAllDespesas();
+    
+    const historicoEconomias = todasDespesas.filter(
+      (d: any) => d.tipoMovimentacao === 'ECONOMIA' && d.categoria === `Meta-${id}`
+    );
+
+    // Agrupar por mês
+    const historicoMensal: Record<string, any> = {};
+    historicoEconomias.forEach((economia: any) => {
+      const data = new Date(economia.data);
+      const mesAno = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!historicoMensal[mesAno]) {
+        historicoMensal[mesAno] = {
+          mes: mesAno,
+          depositos: [],
+          totalDeposito: 0,
+          quantidadeDepositos: 0,
+        };
+      }
+
+      historicoMensal[mesAno].depositos.push({
+        data: economia.data,
+        valor: Number(economia.valor),
+        titulo: economia.titulo,
+      });
+      historicoMensal[mesAno].totalDeposito += Number(economia.valor);
+      historicoMensal[mesAno].quantidadeDepositos += 1;
+    });
+
+    // Converter em array ordenado por mês
+    const historicoOrdenado = Object.values(historicoMensal).sort(
+      (a: any, b: any) => a.mes.localeCompare(b.mes)
+    );
+
+    return res.status(200).json({
+      meta: {
+        id: meta.id,
+        titulo: meta.titulo,
+        valor: Number(meta.valor),
+        valorAcumulado: Number(meta.valorAcumulado),
+        dataInicio: meta.dataInicio,
+        dataFinal: meta.dataFinal,
+      },
+      historicoMensal: historicoOrdenado,
+      totalDepositos: historicoEconomias.length,
+      totalAcumuladoRegistrado: historicoEconomias.reduce((total: number, e: any) => total + Number(e.valor), 0),
+    });
+  } catch (error) {
+    console.error('ERRO AO OBTER HISTÓRICO DA META:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
   }
 };

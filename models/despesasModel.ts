@@ -1,7 +1,7 @@
 import prisma from '../db/prismaClient.js';
 
-export const createDespesa = (data: { titulo: string; categoria?: string; valor: number | string; data: Date; usuarioId: string }) => {
-  return prisma.despesas.create({ data: { ...data, valor: Number(data.valor) } });
+export const createDespesa = (data: { titulo: string; categoria?: string; valor: number | string; data: Date; usuarioId: string; tipoMovimentacao?: string }) => {
+  return prisma.despesas.create({ data: { ...data, valor: Number(data.valor), tipoMovimentacao: data.tipoMovimentacao || 'DESPESA' } });
 };
 
 export const findAllDespesas = () => {

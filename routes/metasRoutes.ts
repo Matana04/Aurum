@@ -7,6 +7,7 @@ import {
   atualizarMeta,
   deletarMeta,
   adicionarValorAcumulado,
+  obterHistoricoMeta,
 } from '../controllers/metasController.js';
 
 const router: Router = express.Router();
@@ -15,6 +16,7 @@ const router: Router = express.Router();
 router.post('/metas', authenticateToken, cadastrarMeta);
 router.get('/metas', authenticateToken, listarMetasDoUsuario);
 router.get('/metas/:id', authenticateToken, obterMeta);
+router.get('/metas/:id/historico', authenticateToken, obterHistoricoMeta);
 router.put('/metas/:id', authenticateToken, atualizarMeta);
 router.delete('/metas/:id', authenticateToken, deletarMeta);
 router.post('/metas/:id/adicionar-valor', authenticateToken, adicionarValorAcumulado);
