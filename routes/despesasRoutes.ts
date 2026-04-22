@@ -526,4 +526,71 @@ router.put('/despesas/:id', authenticateToken, DespesasController.atualizarDespe
  */
 router.delete('/despesas/:id', authenticateToken, DespesasController.deletarDespesa);
 
+/**
+ * @openapi
+ * /despesas/categoria/maior-gasto:
+ *   get:
+ *     tags:
+ *       - Despesas
+ *     summary: Obter a categoria com maior gasto
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Categoria com maior gasto encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 categoria:
+ *                   type: string
+ *                   example: 'Carro'
+ *                 valorTotal:
+ *                   type: number
+ *                   example: 1000.00
+ *                 valorMedio:
+ *                   type: number
+ *                   example: 250.00
+ *                 quantidadeDespesas:
+ *                   type: integer
+ *                   example: 4
+ *                 historico:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       titulo:
+ *                         type: string
+ *                       valor:
+ *                         type: number
+ *                       data:
+ *                         type: string
+ *                         format: date-time
+ *                       mes:
+ *                         type: string
+ *                         example: 'abril de 2026'
+ *       401:
+ *         description: Usuário não autenticado ou token inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Nenhuma despesa encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Erro interno no servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/categoria/maior-gasto', authenticateToken, DespesasController.obterCategoriaMaiorGasto);
+
 export default router;

@@ -153,3 +153,68 @@ export const findDespesasDoMesAtual = (usuarioId: string, ano: number, mes: numb
     },
   });
 };
+
+export const findCategoriaMaiorGasto = async (usuarioId: string) => {
+  // Agrupar despesas por categoria e somar os valores
+  const categoriasPorGasto = await prisma.despesas.groupBy({
+    by: ['categoria'],
+    where: {
+      usuarioId,
+      tipoMovimentacao: 'DESPESA',
+    },
+    _sum: {
+      valor: true,
+    },
+    orderBy: {
+      _sum: {
+        valor: 'desc',
+      },
+    },
+  });
+
+  if (!categoriasPorGasto || categoriasPorGasto.length === 0) {
+    return null;
+  }
+
+  // Pega a categoria com maior gasto
+  const categoriaMaior = categoriasPorGasto[0];
+
+  // Busca todas as despesas dessa categoria para o histórico
+  const historicoDespesas = await prisma.despesas.findMany({
+    where: {
+      usuarioId,
+      categoria: categoriaMaior.categoria,
+      tipoMovimentacao: 'DESPESA',
+    },
+    select: {
+      id: true,
+      titulo: true,
+      categoria: true,
+      valor: true,
+      data: true,
+      createdAt: true,
+    },
+    orderBy: {
+      data: 'desc',
+    },
+  });
+
+  // Calcular estatísticas
+  const quantidadeDespesas = historicoDespesas.length;
+  const valorTotal = categoriaMaior._sum.valor || 0;
+  const valorMedio = quantidadeDespesas > 0 ? Number(valorTotal) / quantidadeDespesas : 0;
+
+  return {
+    categoria: categoriaMaior.categoria,
+    valorTotal: Number(valorTotal),
+    valorMedio: Number(valorMedio),
+    quantidadeDespesas,
+    historico: historicoDespesas.map((despesa) => ({
+      id: despesa.id,
+      titulo: despesa.titulo,
+      valor: Number(despesa.valor),
+      data: despesa.data,
+      mes: new Date(despesa.data).toLocaleString('pt-BR', { month: 'long', year: 'numeric' }),
+    })),
+  };
+};

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { createDespesa, findAllDespesas, findDespesaById, updateDespesa, deleteDespesa, findDespesasByUsuarioAndMes, findLast5DespesasDoMes, findDespesasDodia, findDespesasDoAno, findDespesasDoMesAtual } from '../models/despesasModel.js';
+import { createDespesa, findAllDespesas, findDespesaById, updateDespesa, deleteDespesa, findDespesasByUsuarioAndMes, findLast5DespesasDoMes, findDespesasDodia, findDespesasDoAno, findDespesasDoMesAtual, findCategoriaMaiorGasto } from '../models/despesasModel.js';
 
 interface AuthRequest extends Request {
   user?: {
@@ -346,6 +346,27 @@ export const listarDespesasDoMesAtual = async (req: AuthRequest, res: Response) 
     });
   } catch (error) {
     console.error('ERRO AO LISTAR DESPESAS DO MÊS ATUAL:', error);
+    return res.status(500).json({ erro: 'Erro interno no servidor.' });
+  }
+};
+
+export const obterCategoriaMaiorGasto = async (req: AuthRequest, res: Response) => {
+  try {
+    const usuarioId = req.user?.id;
+
+    if (!usuarioId) {
+      return res.status(401).json({ erro: 'Usuário não autenticado.' });
+    }
+
+    const categoriaMaiorGasto = await findCategoriaMaiorGasto(usuarioId);
+
+    if (!categoriaMaiorGasto) {
+      return res.status(404).json({ erro: 'Nenhuma despesa encontrada para este usuário.' });
+    }
+
+    return res.status(200).json(categoriaMaiorGasto);
+  } catch (error) {
+    console.error('ERRO AO OBTER CATEGORIA COM MAIOR GASTO:', error);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
   }
 };
