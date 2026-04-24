@@ -177,7 +177,7 @@ export const findCategoriaMaiorGasto = async (usuarioId: string) => {
   }
 
   // Pega a categoria com maior gasto
-  const categoriaMaior = categoriasPorGasto[0];
+  const categoriaMaior = categoriasPorGasto[0]!;
 
   // Busca todas as despesas dessa categoria para o histórico
   const historicoDespesas = await prisma.despesas.findMany({
